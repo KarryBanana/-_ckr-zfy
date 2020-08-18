@@ -10,6 +10,7 @@ def get_notice(request):
     cur=con.cursor()
     id=request.POST['id']
     op=request.POST['op']
+    op=int(op)
     sql="select nid,content,ntime from Noticelist where id="+str(id)+" and type="+str(op)
     cur.execute(sql)
     con.close()

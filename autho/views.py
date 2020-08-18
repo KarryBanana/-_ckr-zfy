@@ -56,6 +56,7 @@ def match_auth(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     id=request.POST['id']
+    id=int(id)
     docnum=request.POST['docnum']
     sql="select author_id from Table_file where id="+str(docnum)
     cur.execute(sql)

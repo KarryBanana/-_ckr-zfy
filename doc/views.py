@@ -26,6 +26,7 @@ def change_info(request):
     id=request.POST['id']
     msg=request.POST['msg']
     op=request.POST['op']
+    op=int(op)
     opc=""
     if op==1:opc="docname"
     elif op==2:opc="doctitle"
@@ -40,13 +41,16 @@ def change_info(request):
 def get_doc(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
-    id=request.POST['num']
+    id=request.POST['id']
     op=request.POST['op']
     opc=""
+    op=int(op)
+    print(op)
     if op==1:opc="doctitle"
-    elif op==2:opc="docintro"
-    elif op==3:opc="doctext"
+    if op==2:opc="docintro"
+    if op==3:opc="doctext"
     sql="select "+opc+" from Table_file where id="+str(id)
+    print(sql)
     cur.execute(sql)
     chars=""
     for row in cur:
@@ -146,7 +150,17 @@ def search_docs(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     key=request.POST['key']
-    sql="select docname,doctitle,docintro from Table_file where docname like '%"+key+"%'"
+    sql="select id,docname,doctitle,docintro from Table_file where docname like '%"+key+"%'"
+    cur.execute(sql)
+    con.close()
+    return JsonResponse(cur.fetchall(),safe=False)
+
+
+def get_group_docs(request):
+    con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
+    cur=con.cursor()
+    groupnum=request.POST['groupnum']
+    sql="select id,docname,lasttime from Table_file where groupnum="+str(groupnum)
     cur.execute(sql)
     con.close()
     return JsonResponse(cur.fetchall(),safe=False)
