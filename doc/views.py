@@ -1,8 +1,10 @@
+from django.contrib.auth.models import User
 from django.shortcuts import render
 
 # Create your views here.
 import pymysql
 from django.http import JsonResponse
+import django
 
 
 def save_doc(request):
@@ -47,8 +49,9 @@ def get_doc(request):
     op=int(op)
     print(op)
     if op==1:opc="doctitle"
-    if op==2:opc="docintro"
-    if op==3:opc="doctext"
+    elif op==2:opc="docintro"
+    elif op==3:opc="doctext"
+    elif op==4:opc="docname"
     sql="select "+opc+" from Table_file where id="+str(id)
     print(sql)
     cur.execute(sql)
@@ -150,21 +153,53 @@ def search_docs(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     key=request.POST['key']
-    sql="select id,docname,doctitle,docintro from Table_file where docname like '%"+key+"%'"
+    sql="select id,docname,author_id,lasttime from Table_file where stat>-2 and docname like '%"+key+"%'"
+    # print(sql)
     cur.execute(sql)
+    docs=cur.fetchall()
+    rarr = []
+    for doc in docs:
+        con.ping()
+        tmp = {}
+        tmp['docnum'] = doc[0]
+        tmp['docname'] = doc[1]
+        tmp['author'] = doc[2]
+        tmp['lasttime'] = doc[3]
+        rarr.append(tmp)
     con.close()
-    return JsonResponse(cur.fetchall(),safe=False)
+    return JsonResponse(rarr,safe=False)
 
 
 def get_group_docs(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
+    id=request.POST['id']
     groupnum=request.POST['groupnum']
-    sql="select id,docname,lasttime from Table_file where groupnum="+str(groupnum)
+    sql="select id,docname,author_id,lasttime from Table_file where stat>-2 and groupnum="+str(groupnum)
     cur.execute(sql)
     con.close()
-    return JsonResponse(cur.fetchall(),safe=False)
-
+    docs=cur.fetchall()
+    rarr=[]
+    for doc in docs:
+        con.ping()
+        tmp={}
+        # print(doc[0])
+        # sql="select count(*) from Table_collectlist"
+        sql="select count(*) from Table_collectlist where user_id="+str(id)+" and file_id="+str(doc[0])
+        print(sql)
+        cur.execute(sql)
+        isCollected=False
+        for row in cur:
+            if row[0]>=1:isCollected=True
+            else:isCollected=False
+        tmp['isCollected']=isCollected
+        tmp['docnum']=doc[0]
+        tmp['docname']=doc[1]
+        tmp['author']=doc[2]
+        tmp['lasttime']=doc[3]
+        rarr.append(tmp)
+    print(rarr)
+    return JsonResponse(rarr,safe=False)
 
 def match_edit(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
@@ -175,9 +210,9 @@ def match_edit(request):
     a=0
     for row in cur:
         a=row[0]
-    if a==1: return JsonResponse(0,safe=False)
+    if a==0: return JsonResponse(0,safe=False)
     else:
-        sql="update Table_file set isedit=1 where id="+str(id)
+        sql="update Table_file set isedit=0 where id="+str(id)
         cur.execute(sql)
         cur.connection.commit()
         con.close()
@@ -188,7 +223,7 @@ def end_edit(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     id=request.POST['id']
-    sql="update Table_file set isedit=0 where id="+str(id)
+    sql="update Table_file set isedit=1 where id="+str(id)
     cur.execute(sql)
     cur.connection.commit()
     con.close()

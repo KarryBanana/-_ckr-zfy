@@ -23,7 +23,7 @@ class File(models.Model):
 
     @classmethod
     def new_file(cls, docname, content, author):
-        file = cls(docname=docname, doctext=content, author=author, lastauthor=author)
+        file = cls(docname=docname, doctitle=docname, doctext=content, author=author, lastauthor=author)
         return file
 
     def __str__(self):

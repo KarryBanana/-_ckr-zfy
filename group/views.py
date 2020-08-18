@@ -408,7 +408,7 @@ def change_stat_func(docnum,stat):
     cur=con.cursor()
     sql="delete from Authlist where docnum="+str(docnum)
     cur.execute(sql)
-    sql="update Table_file set stat="+str(stat)+" where docnum="+str(docnum)
+    sql="update Table_file set stat="+str(stat)+" where id="+str(docnum)
     cur.execute(sql)
     cur.connection.commit()
     con.close()
@@ -445,3 +445,33 @@ def send_notice(id,groupnum,op):
     cur.connection.commit()
     con.close()
     return 1
+
+
+def get_leader(request):
+    con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
+    cur=con.cursor()
+    groupnum=request.POST['groupnum']
+    sql="select id from Grouplist where groupnum="+str(groupnum)
+    cur.execute(sql)
+    for row in cur:
+        uid=row[0]
+    con.close()
+    return JsonResponse(uid,safe=False)
+
+
+def get_identity(request):
+    con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
+    cur=con.cursor()
+    id=request.POST['id']
+    groupnum=request.POST['groupnum']
+    sql="select isleader,isadmin from Joinlist where id="+str(id)+" and groupnum="+str(groupnum)
+    cur.execute(sql)
+    for row in cur:
+        isleader=row[0]
+        isadmin=row[1]
+    identity=0
+    if isleader==1:identity=3
+    elif isleader!=1 and isadmin==1:identity=2
+    else:identity=1
+    con.close()
+    return JsonResponse(identity,safe=False)

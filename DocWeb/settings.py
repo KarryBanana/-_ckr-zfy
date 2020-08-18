@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'group',
     'doc',
     'autho',
-    'notice'
+    'notice',
 ]
 
 MIDDLEWARE = [
