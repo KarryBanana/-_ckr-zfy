@@ -57,7 +57,7 @@ def match_auth(request):
     cur=con.cursor()
     id=request.POST['id']
     docnum=request.POST['docnum']
-    sql="select id from Table_file where id="+str(docnum)
+    sql="select author_id from Table_file where id="+str(docnum)
     cur.execute(sql)
     aid=0
     for row in cur:

@@ -36,17 +36,13 @@ def create_group(request):
     groupname=request.POST['groupname']
     groupsize=1
     groupintro=request.POST['groupintro']
-    print(groupintro)
     id=request.POST['id']
-    print(id)
     sql="select groupnum from Grouplist order by groupnum desc limit 1"
     cur.execute(sql)
     for row in cur:
         groupnum=row[0]+1
     cur=con.cursor()
     sql="insert into Grouplist values("+'"'+str(groupname)+'"'+','+str(groupnum)+","+str(groupsize)+','+'"'+str(groupintro)+'"'+","+str(id)+")"
-    print(sql)
-
     cur.execute(sql)
     cur=con.cursor()
     sql="insert into Joinlist values("+str(groupnum)+","+str(id)+",1,1)"
@@ -104,6 +100,19 @@ def quit_group(request):
     for row in cur:
         docnum=row[0]
         change_stat_func(docnum,-1)
+
+    groupname=""
+    sql="select groupname from Grouplist where groupnum="+str(groupnum)
+    cur.execute(sql)
+    for row in cur:
+        groupname=row[0]
+    content="您已成功退出团队 "+groupname+"."
+    sql="select count(*) from Noticelist"
+    cur.execute(sql)
+    for row in cur:
+        nid=row[0]+1
+    sql="insert into Noticelist values("+str(nid)+","+str(id)+",'"+content+"',now(),0,2)"
+    cur.execute(sql)
 
     send_notice(id, groupnum, -1)
     #还需要再对文档的归属和权限作品进行处理
@@ -188,11 +197,17 @@ def kick_out_user(request):
     for row in cur:
         groupname=row[0]
     content="您已被管理员移出团队 "+groupname+"."
-    sql = "insert into Noticelise values(," + str(id) + ",'" + content + "',now(),0)"
+
+    sql = "select count(*) from Noticelist"
+    cur.execute(sql)
+    for row in cur:
+        nid = row[0] + 1
+
+    sql = "insert into Noticelist values("+str(nid)+"," + str(id) + ",'" + content + "',now(),0,2)"
     cur.execute(sql)
     cur.connection.commit()
     con.close()
-    return JsonResponse(quit_group_func(id,groupnum),safe=False)
+    return JsonResponse(quit_group_func(id,groupnum,-1),safe=False)
 
 
 def dismiss_group(request):
@@ -201,10 +216,28 @@ def dismiss_group(request):
     groupnum=request.POST['groupnum']
     sql="select id from Joinlist where groupnum="+str(groupnum)
     cur.execute(sql)
+    sql="select groupname from Grouplist where groupnum="+str(groupnum)
+    cur.execute(sql)
+    groupname=""
+    for row in cur:
+        groupname=row[0]
+    content="团队 "+groupname+" 已被解散."
     for row in cur:
         id=row[0]
-        quit_group_func(id,groupnum)
+        sql = "select count(*) from Noticelist"
+        cur.execute(sql)
+        for row in cur:
+            nid = row[0] + 1
+        sql = "insert into Noticelist values(" + str(nid) + "," + str(id) + ",'" + content + "',now(),0,2)"
+        cur.execute(sql)
+
+    for row in cur:
+        id=row[0]
+        quit_group_func(id,groupnum,-2)
+
     sql="delete from Grouplist where groupnum="+str(groupnum)
+    cur.execute(sql)
+    sql="delte from Joinlist where groupnum="+str(groupnum)
     cur.execute(sql)
     cur.connection.commit()
     con.close()
@@ -295,7 +328,7 @@ def get_num_by_name(username):
     return id
 
 
-def quit_group_func(id,groupnum):
+def quit_group_func(id,groupnum,op):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     # username=request.POST['username']
@@ -319,7 +352,7 @@ def quit_group_func(id,groupnum):
         docnum = row[0]
         change_stat_func(docnum, -1)
 
-    send_notice(id, groupnum, -1)
+    if op==-1:send_notice(id, groupnum, op)
 
     #还需要再对文档的归属和权限作品进行处理
     sql = "update Grouplist set groupsize=groupsize-1 where groupnum=" + str(groupnum)
@@ -348,6 +381,20 @@ def join_group_func(id,groupnum):
     cur.execute(sql)
     # cur.connection.commit()
     sql ="update Grouplist set groupsize=groupsize+1 where groupnum="+str(groupnum)
+
+    groupname = ""
+    sql = "select groupname from Grouplist where groupnum=" + str(groupnum)
+    cur.execute(sql)
+    for row in cur:
+        groupname = row[0]
+    content = "您已成功加入团队 " + groupname + "."
+    sql = "select count(*) from Noticelist"
+    cur.execute(sql)
+    for row in cur:
+        nid = row[0] + 1
+    sql = "insert into Noticelist values(" + str(nid) + "," + str(id) + ",'" + content + "',now(),0,2)"
+    cur.execute(sql)
+
     send_notice(id,groupnum,1)
     cur.execute(sql)
     cur.connection.commit()
@@ -389,7 +436,11 @@ def send_notice(id,groupnum,op):
     cur.execute(sql)
     for row in cur:
         userid=row[0]
-        sql = "insert into Noticelise values(," + str(userid) + ",'" + content + "',now(),0)"
+        sql = "select count(*) from Noticelist"
+        cur.execute(sql)
+        for row in cur:
+            nid = row[0] + 1
+        sql = "insert into Noticelist values("+str(nid)+"," + str(userid) + ",'" + content + "',now(),0,2)"
         cur.execute(sql)
     cur.connection.commit()
     con.close()

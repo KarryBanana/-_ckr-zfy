@@ -46,7 +46,7 @@ def get_doc(request):
     if op==1:opc="doctitle"
     elif op==2:opc="docintro"
     elif op==3:opc="doctext"
-    sql="select "+opc+" from Tablefile where id="+str(id)
+    sql="select "+opc+" from Table_file where id="+str(id)
     cur.execute(sql)
     chars=""
     for row in cur:
@@ -55,15 +55,58 @@ def get_doc(request):
     return JsonResponse(chars,safe=False)
 
 
+# def submit_comment(request):
+#     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
+#     cur=con.cursor()
+#     id=request.POST['id']
+#     docnum=request.POST['docnum']
+#     content=request.POST['content']
+#     sql="insert into Commentlist values('"+content+"',"+str(id)+","+str(docnum)+",now())"
+#     cur.execute(sql)
+#     sql="select username from auth_user where id="+str(id)
+#     cur.execute(sql)
+#     for row in cur:
+#         username=row[0]
+#     sql = "select docname from Table_file where id=" + str(docnum)
+#     cur.execute(sql)
+#     for row in cur:
+#         docname = row[0]
+#     content=username+" 评论了您的文档: "+docname+" ,去看看吧!"
+#     sql = "select author_id from Table_file where id=" + str(docnum)
+#     cur.execute(sql)
+#     for row in cur:
+#         author_id = row[0]
+#     sql = "insert into Noticelist values(," + str(author_id) + ",'" + content + "',now(),0)"
+#
+#     cur.connection.commit()
+#     con.close()
+#     return JsonResponse(1,safe=False)
+#
+#
+# def get_comments(request):
+#     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
+#     cur=con.cursor()
+#     docnum=request.POST['docnum']
+#     sql="select auth_user.username,commenttime,content from (auth_user join Commentlist on auth_user.id=Commentlist.id) where docnum="+str(docnum)
+#     cur.execute(sql)
+#     con.close()
+#     return JsonResponse(cur.fetchall(),safe=False)
+
+
 def submit_comment(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
-    id=request.POST['id']
+    cid = request.POST['cid']
+    uid=request.POST['uid']
+    f_cid = request.POST['f_cid']
+    f_uid = request.POST['f_uid']
+    f_name = request.POST['f_name']
     docnum=request.POST['docnum']
     content=request.POST['content']
-    sql="insert into Commentlist values('"+content+"',"+str(id)+","+str(docnum)+",now())"
+    commenttime = request.POST['commenttime']
+    sql="insert into Commentlist values('"+content+"',"+str(docnum)+",'"+ commenttime +"',"+str(cid)+","+str(uid)+","+str(f_cid)+","+str(f_uid)+",'"+f_name+"')"
     cur.execute(sql)
-    sql="select username from auth_user where id="+str(id)
+    sql = "select username from auth_user where id=" + str(id)
     cur.execute(sql)
     for row in cur:
         username=row[0]
@@ -76,8 +119,14 @@ def submit_comment(request):
     cur.execute(sql)
     for row in cur:
         author_id = row[0]
-    sql = "insert into Noticelise values(," + str(author_id) + ",'" + content + "',now(),0)"
 
+    sql="select count(*) from Noticelist"
+    cur.execute(sql)
+    for row in cur:
+        nid=row[0]+1
+
+    sql ="insert into Noticelist values("+str(nid)+","+str(author_id)+",'"+content+"',now(),0,1)"
+    cur.execute(sql)
     cur.connection.commit()
     con.close()
     return JsonResponse(1,safe=False)
@@ -87,7 +136,7 @@ def get_comments(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     docnum=request.POST['docnum']
-    sql="select auth_user.username,commenttime,content from (auth_user join Commentlist on auth_user.id=Commentlist.id) where docnum="+str(docnum)
+    sql="select cid,uid,auth_user.username,content,commenttime,f_cid,f_name from (auth_user join Commentlist on auth_user.id=Commentlist.uid) where docnum="+str(docnum)
     cur.execute(sql)
     con.close()
     return JsonResponse(cur.fetchall(),safe=False)
@@ -138,7 +187,7 @@ def get_groupnum(request):
     id=request.POST['id']
     sql="select groupnum from Table_file where id="+str(id)
     cur.execute(sql)
-    for row in sql:
+    for row in cur:
         r=row[0]
     con.close()
     return JsonResponse(r,safe=False)
