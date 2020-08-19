@@ -199,10 +199,11 @@ def create_file(request):
     user_id = request.POST.get('id')
     content = request.POST.get('content')
     docname = request.POST.get('docname')
+    docintro = request.POST.get('docintro')
     print(content)
     print(docname)
     user = User.objects.get(id=user_id)
-    file = File.new_file(docname, content, user)
+    file = File.new_file(docname, docintro, content, user)
     file.save()
     response = {'info': "success", 'docid': file.id}  # 返回一个文档id
     return JsonResponse(response, safe=False)

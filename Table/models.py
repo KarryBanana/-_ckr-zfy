@@ -22,8 +22,8 @@ class File(models.Model):
     groupnum = models.IntegerField(default=-1)
 
     @classmethod
-    def new_file(cls, docname, content, author):
-        file = cls(docname=docname, doctitle=docname, doctext=content, author=author, lastauthor=author)
+    def new_file(cls, docname, docintro, content, author):
+        file = cls(docname=docname, doctitle=docname, docintro=docintro,doctext=content, author=author, lastauthor=author)
         return file
 
     def __str__(self):
