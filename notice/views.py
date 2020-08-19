@@ -11,7 +11,7 @@ def get_notice(request):
     id=request.POST['id']
     op=request.POST['op']
     op=int(op)
-    sql="select nid,content,ntime from Noticelist where id="+str(id)+" and type="+str(op)
+    sql="select nid,content,ntime,isread from Noticelist where isread<>-1 and id="+str(id)+" and type="+str(op)
     cur.execute(sql)
     con.close()
     return JsonResponse(cur.fetchall(),safe=False)
@@ -50,7 +50,8 @@ def delete_notice(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     nid=request.POST['nid']
-    sql="delete from Noticelist where nid="+str(nid)
+    # sql="delete from Noticelist where nid="+str(nid)
+    sql="update Noticelist set isread=-1 where nid="+str(nid)
     cur.execute(sql)
     cur.connection.commit()
     con.close()
@@ -61,7 +62,8 @@ def clear_notice(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     id=request.POST['id']
-    sql="delete from Noticelist where id="+str(id)
+    # sql="delete from Noticelist where id="+str(id)
+    sql="update Noticelist set isread=-1 where id="+str(id)
     cur.execute(sql)
     cur.connection.commit()
     con.close()

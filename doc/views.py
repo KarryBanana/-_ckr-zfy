@@ -34,6 +34,7 @@ def change_info(request):
     elif op==2:opc="doctitle"
     elif op==3:opc="docintro"
     sql="update Table_file set "+opc+"='"+msg+"' where id="+str(id)
+    print(sql)
     cur.execute(sql)
     cur.connection.commit()
     con.close()
@@ -137,6 +138,7 @@ def submit_comment(request):
     cur.execute(sql)
     cur.connection.commit()
     ###
+    f_uid=int(f_uid)
     if f_uid!=0:
         content=username+"回复了您在文档 "+docname+" 中的评论,去看看吧!"
         sql = "select count(*) from Noticelist"
@@ -249,6 +251,7 @@ def get_groupnum(request):
     id=request.POST['id']
     sql="select groupnum from Table_file where id="+str(id)
     cur.execute(sql)
+    r=-1
     for row in cur:
         r=row[0]
     con.close()

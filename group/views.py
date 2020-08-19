@@ -257,11 +257,18 @@ def send_invitation(request):
     receivename=request.POST['receivename']
     receiveid=get_num_by_name(receivename)
 
+    sql="select count(*) from Joinlist where groupnum="+str(groupnum)+" and id="+str(receiveid)
+    cur.execute(sql)
+    for row in cur:
+        ex=row[0]
+    if ex>=1:return JsonResponse(2,safe=False)
+
+
     sql="select count(*) from Msglist"
     cur.execute(sql)
     for row in cur:
         mid=row[0]+1
-    sql="insert into Msglist values("+str(sendid)+","+str(receiveid)+","+str(groupnum)+",0,now(),"+str(mid)+",)"
+    sql="insert into Msglist values("+str(sendid)+","+str(receiveid)+","+str(groupnum)+",0,now(),"+str(mid)+")"
     cur.execute(sql)
     cur.connection.commit()
 
@@ -282,7 +289,7 @@ def get_invitation_a(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     id=request.POST['id']
-    sql="select Msglist.mid,auth_user.username,Grouplist.groupnum,Grouplist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.sendid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.receiveid="+str(id)
+    sql="select Msglist.mid,auth_user.username,Grouplist.groupnum,Grouplist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.sendid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.ishandle<>-5 and Msglist.receiveid="+str(id)
     cur.execute(sql)
     con.close()
     return JsonResponse(cur.fetchall(),safe=False)
@@ -292,7 +299,7 @@ def get_invitation_b(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     id=request.POST['id']
-    sql="select Msglist.mid,auth_user.username,Grouplist.groupnum,Grouplist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.receiveid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.sendid="+str(id)
+    sql="select Msglist.mid,auth_user.username,Grouplist.groupnum,Grouplist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.receiveid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.ishandle<>-5 and Msglist.sendid="+str(id)
     cur.execute(sql)
     con.close()
     return JsonResponse(cur.fetchall(),safe=False)
@@ -318,7 +325,8 @@ def delete_invitation(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     mid=request.POST['mid']
-    sql="delete from Msglist where mid="+str(mid)
+    # sql="delete from Msglist where mid="+str(mid)
+    sql="update Msglist set ishandle=-5 where mid="+str(mid)
     cur.execute(sql)
     cur.connection.commit()
     con.close()
@@ -329,7 +337,8 @@ def clear_invitation(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     id=request.POST['mid']
-    sql="delete from Msglist where sendid="+str(id)
+    # sql="delete from Msglist where sendid="+str(id)
+    sql="update Msglist set ishandle=-5 where sendid="+str(id)
     cur.execute(sql)
     cur.connection.commit()
     con.close()
