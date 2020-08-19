@@ -10,12 +10,12 @@ import django
 def save_doc(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
-    id=request.POST['num']
+    id=request.POST['id']
     msg=request.POST['msg']
     userid=request.POST['userid']
     sql="update Table_file set doctext='"+msg+"' where id="+str(id)
     cur.execute(sql)
-    sql="update Table file set lastauthor_id="+str(userid)+",lasttime=now() where id="+str(id)
+    sql="update Table_file set lastauthor_id="+str(userid)+",lasttime=now() where id="+str(id)
     cur.execute(sql)
     cur.connection.commit()
     con.close()
@@ -113,7 +113,8 @@ def submit_comment(request):
     commenttime = request.POST['commenttime']
     sql="insert into Commentlist values('"+content+"',"+str(docnum)+",'"+ commenttime +"',"+str(cid)+","+str(uid)+","+str(f_cid)+","+str(f_uid)+",'"+f_name+"')"
     cur.execute(sql)
-    sql = "select username from auth_user where id=" + str(id)
+
+    sql = "select username from auth_user where id=" + str(uid)
     cur.execute(sql)
     for row in cur:
         username=row[0]
@@ -134,6 +135,18 @@ def submit_comment(request):
 
     sql ="insert into Noticelist values("+str(nid)+","+str(author_id)+",'"+content+"',now(),0,1)"
     cur.execute(sql)
+    cur.connection.commit()
+    ###
+    if f_uid!=0:
+        content=username+"回复了您在文档 "+docname+" 中的评论,去看看吧!"
+        sql = "select count(*) from Noticelist"
+        cur.execute(sql)
+        for row in cur:
+            nid = row[0] + 1
+        sql = "insert into Noticelist values(" + str(nid) + "," + str(f_uid) + ",'" + content + "',now(),0,1)"
+        cur.execute(sql)
+        cur.connection.commit()
+
     cur.connection.commit()
     con.close()
     return JsonResponse(1,safe=False)

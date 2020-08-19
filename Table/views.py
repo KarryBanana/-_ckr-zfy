@@ -21,7 +21,7 @@ def recent_files(request, id):  # 返回收藏的状态
         ret = []
         for file in files:  # 加上收藏情况
             tmp = {}
-            if (current_time - file.lasttime).days <= 3 and file.stat > -2:
+            if (current_time - file.lasttime).days <= 2 and file.stat > -2:  # 最近三天
                 if CollectList.objects.filter(file=file).exists():
                     tmp['isCollected'] = True
                 tmp['docnum'] = file.id
@@ -180,14 +180,19 @@ def delete_bin_file(request):
 
 
 def delete_bin_all(request):
-    file_array = request.POST.get('array')
-    for file in file_array:
-        try:
-            delete_file = File.objects.get(id=file.id)
-            delete_file.delete()
-        except File.DoesNotExist:
-            return JsonResponse("failed", safe=False)
-    return JsonResponse("success", safe=False)
+    if request.method == 'POST':
+        print(request.POST)
+
+        for filenum in request.POST:
+            print(filenum)
+            file_id = request.POST.getlist(filenum)
+            print(file_id[0])
+            try:
+                delete_file = File.objects.get(id=file_id[0])
+                delete_file.delete()
+            except File.DoesNotExist:
+                return JsonResponse("failed", safe=False)
+        return JsonResponse("success", safe=False)
 
 
 def create_file(request):

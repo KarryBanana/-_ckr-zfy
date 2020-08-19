@@ -44,6 +44,7 @@ def create_group(request):
     cur=con.cursor()
     sql="insert into Grouplist values("+'"'+str(groupname)+'"'+','+str(groupnum)+","+str(groupsize)+','+'"'+str(groupintro)+'"'+","+str(id)+")"
     cur.execute(sql)
+    cur.connection.commit()
     cur=con.cursor()
     sql="insert into Joinlist values("+str(groupnum)+","+str(id)+",1,1)"
     cur.execute(sql)
@@ -113,6 +114,7 @@ def quit_group(request):
         nid=row[0]+1
     sql="insert into Noticelist values("+str(nid)+","+str(id)+",'"+content+"',now(),0,2)"
     cur.execute(sql)
+    cur.connection.commit()
 
     send_notice(id, groupnum, -1)
     #还需要再对文档的归属和权限作品进行处理
@@ -192,7 +194,7 @@ def kick_out_user(request):
     id=request.POST['id']
     groupnum=request.POST['groupnum']
     groupname=""
-    sql="select groupname from Grouplist wehre groupnum="+str(groupnum)
+    sql="select groupname from Grouplist where groupnum="+str(groupnum)
     cur.execute(sql)
     for row in cur:
         groupname=row[0]
@@ -207,7 +209,8 @@ def kick_out_user(request):
     cur.execute(sql)
     cur.connection.commit()
     con.close()
-    return JsonResponse(quit_group_func(id,groupnum,-1),safe=False)
+    r=quit_group_func(id,groupnum,-1)
+    return JsonResponse(r,safe=False)
 
 
 def dismiss_group(request):
@@ -216,13 +219,14 @@ def dismiss_group(request):
     groupnum=request.POST['groupnum']
     sql="select id from Joinlist where groupnum="+str(groupnum)
     cur.execute(sql)
+    love_hk=cur.fetchall()
     sql="select groupname from Grouplist where groupnum="+str(groupnum)
     cur.execute(sql)
     groupname=""
     for row in cur:
         groupname=row[0]
     content="团队 "+groupname+" 已被解散."
-    for row in cur:
+    for row in love_hk:
         id=row[0]
         sql = "select count(*) from Noticelist"
         cur.execute(sql)
@@ -237,7 +241,7 @@ def dismiss_group(request):
 
     sql="delete from Grouplist where groupnum="+str(groupnum)
     cur.execute(sql)
-    sql="delte from Joinlist where groupnum="+str(groupnum)
+    sql="delete from Joinlist where groupnum="+str(groupnum)
     cur.execute(sql)
     cur.connection.commit()
     con.close()
@@ -252,6 +256,7 @@ def send_invitation(request):
     receivename=request.POST['receivename']
     receiveid=get_num_by_name(receivename)
     sql="insert into Msglist values("+str(sendid)+","+str(receiveid)+","+str(groupnum)+",0,now())"
+    print(sql)
     cur.execute(sql)
     cur.connection.commit()
     con.close()
@@ -262,7 +267,8 @@ def get_invitation_a(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     id=request.POST['id']
-    sql="select auth_user.username,Grouplist.groupnum,Msglist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.sendid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.receiveid="+str(id)
+    sql="select auth_user.username,Grouplist.groupnum,Grouplist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.sendid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.receiveid="+str(id)
+    print(sql)
     cur.execute(sql)
     con.close()
     return JsonResponse(cur.fetchall(),safe=False)
@@ -272,7 +278,8 @@ def get_invitation_b(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     id=request.POST['id']
-    sql="select auth_user.username,Grouplist.groupnum,Msglist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.receiveid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.sendid="+str(id)
+    sql="select auth_user.username,Grouplist.groupnum,Grouplist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.receiveid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.sendid="+str(id)
+    print(sql)
     cur.execute(sql)
     con.close()
     return JsonResponse(cur.fetchall(),safe=False)
@@ -284,6 +291,7 @@ def handle_invitation(request):
     id=request.POST['id']
     groupnum=request.POST['groupnum']
     op=request.POST['op']
+    op=int(op)
     sql="update Msglist set ishandle="+str(op)+" where receiveid="+str(id)+" and groupnum="+str(groupnum)
     cur.execute(sql)
     if op==1:
@@ -320,7 +328,8 @@ def handle_invitation(request):
 def get_num_by_name(username):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
-    sql="select id from auth_user where username="+username
+    sql="select id from auth_user where username='"+username+"'"
+    print(sql)
     cur.execute(sql)
     for row in cur:
         id=row[0]
@@ -381,7 +390,7 @@ def join_group_func(id,groupnum):
     cur.execute(sql)
     # cur.connection.commit()
     sql ="update Grouplist set groupsize=groupsize+1 where groupnum="+str(groupnum)
-
+    cur.execute(sql)
     groupname = ""
     sql = "select groupname from Grouplist where groupnum=" + str(groupnum)
     cur.execute(sql)
@@ -394,10 +403,9 @@ def join_group_func(id,groupnum):
         nid = row[0] + 1
     sql = "insert into Noticelist values(" + str(nid) + "," + str(id) + ",'" + content + "',now(),0,2)"
     cur.execute(sql)
+    cur.connection.commit()
 
     send_notice(id,groupnum,1)
-    cur.execute(sql)
-    cur.connection.commit()
     con.close()
     if(cur!=None):return JsonResponse(1,safe=False)
     else:return JsonResponse(0,safe=False)
@@ -432,9 +440,10 @@ def send_notice(id,groupnum,op):
     for row in cur:
         groupname = row[0]
     content=username+" 已"+opc+"团队 "+groupname+"."
-    sql="select id from Joinlist where groupnum="+str(groupnum)+" and isadmin=1"
+    sql="select id from Joinlist where groupnum="+str(groupnum)+" and isadmin=1 and id<>"+str(id)
     cur.execute(sql)
-    for row in cur:
+    love_hk=cur.fetchall()
+    for row in love_hk:
         userid=row[0]
         sql = "select count(*) from Noticelist"
         cur.execute(sql)
@@ -442,6 +451,7 @@ def send_notice(id,groupnum,op):
             nid = row[0] + 1
         sql = "insert into Noticelist values("+str(nid)+"," + str(userid) + ",'" + content + "',now(),0,2)"
         cur.execute(sql)
+        cur.connection.commit()
     cur.connection.commit()
     con.close()
     return 1
