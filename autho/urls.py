@@ -11,4 +11,6 @@ urlpatterns = [
     path('match_auth/', views.match_auth, name='match_auth'),
     path('set_group_auth/',views.set_group_auth,name='set_group_auth'),
     path('set_admin_auth/',views.set_admin_auth,name='set_admin_auth'),
+    path('change_owner/',views.change_owner,name='change_owner'),
+    path('change_owner_b/',views.change_owner_b,name='change_owner_b'),
 ]

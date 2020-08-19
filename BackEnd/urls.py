@@ -23,4 +23,5 @@ urlpatterns = [
     path('group/',include('group.urls')),
     path('doc/',include('doc.urls')),
     path('autho/',include('autho.urls')),
+    path('notice/',include('notice.urls')),
 ]

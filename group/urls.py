@@ -22,4 +22,6 @@ urlpatterns = [
     path('handle_invitation/',views.handle_invitation,name='handle_invitation'),
     path('get_leader/',views.get_leader,name='get_leader'),
     path('get_identity/',views.get_identity,name='get_identity'),
+    path('delete_invitation/',views.delete_invitation,name='delete_invitation'),
+    path('clear_invitation/',views.clear_invitation,name='clear_invitation'),
 ]

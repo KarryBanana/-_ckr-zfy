@@ -101,6 +101,7 @@ def quit_group(request):
     for row in cur:
         docnum=row[0]
         change_stat_func(docnum,-1)
+    #还需要再对文档的归属和权限作品进行处理
 
     groupname=""
     sql="select groupname from Grouplist where groupnum="+str(groupnum)
@@ -117,7 +118,6 @@ def quit_group(request):
     cur.connection.commit()
 
     send_notice(id, groupnum, -1)
-    #还需要再对文档的归属和权限作品进行处理
     sql = "update Grouplist set groupsize=groupsize-1 where groupnum=" + str(groupnum)
     print(sql)
     cur.execute(sql)
@@ -234,6 +234,7 @@ def dismiss_group(request):
             nid = row[0] + 1
         sql = "insert into Noticelist values(" + str(nid) + "," + str(id) + ",'" + content + "',now(),0,2)"
         cur.execute(sql)
+        cur.connection.commit()
 
     for row in cur:
         id=row[0]
@@ -255,10 +256,24 @@ def send_invitation(request):
     groupnum=request.POST['groupnum']
     receivename=request.POST['receivename']
     receiveid=get_num_by_name(receivename)
-    sql="insert into Msglist values("+str(sendid)+","+str(receiveid)+","+str(groupnum)+",0,now())"
-    print(sql)
+
+    sql="select count(*) from Msglist"
+    cur.execute(sql)
+    for row in cur:
+        mid=row[0]+1
+    sql="insert into Msglist values("+str(sendid)+","+str(receiveid)+","+str(groupnum)+",0,now(),"+str(mid)+",)"
     cur.execute(sql)
     cur.connection.commit()
+
+    # sql = "select count(*) from Msglist"
+    # cur.execute(sql)
+    # for row in cur:
+    #     mid = row[0] + 1
+    # sql = "insert into Msglist values(" + str(sendid) + "," + str(receiveid) + "," + str(groupnum) + ",0,now()," + str(
+    #     mid) + ",)"
+    # cur.execute(sql)
+    # cur.connection.commit()
+
     con.close()
     return JsonResponse(1,safe=False)
 
@@ -267,8 +282,7 @@ def get_invitation_a(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     id=request.POST['id']
-    sql="select auth_user.username,Grouplist.groupnum,Grouplist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.sendid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.receiveid="+str(id)
-    print(sql)
+    sql="select Msglist.mid,auth_user.username,Grouplist.groupnum,Grouplist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.sendid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.receiveid="+str(id)
     cur.execute(sql)
     con.close()
     return JsonResponse(cur.fetchall(),safe=False)
@@ -278,8 +292,7 @@ def get_invitation_b(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     id=request.POST['id']
-    sql="select auth_user.username,Grouplist.groupnum,Grouplist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.receiveid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.sendid="+str(id)
-    print(sql)
+    sql="select Msglist.mid,auth_user.username,Grouplist.groupnum,Grouplist.groupname,Msglist.ishandle,mtime from ((auth_user join Msglist on auth_user.id=Msglist.receiveid) join Grouplist on Msglist.groupnum=Grouplist.groupnum) where Msglist.sendid="+str(id)
     cur.execute(sql)
     con.close()
     return JsonResponse(cur.fetchall(),safe=False)
@@ -296,6 +309,40 @@ def handle_invitation(request):
     cur.execute(sql)
     if op==1:
         join_group_func(id,groupnum)
+    cur.connection.commit()
+    con.close()
+    return JsonResponse(1,safe=False)
+
+
+def delete_invitation(request):
+    con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
+    cur=con.cursor()
+    mid=request.POST['mid']
+    sql="delete from Msglist where mid="+str(mid)
+    cur.execute(sql)
+    cur.connection.commit()
+    con.close()
+    return JsonResponse(1,safe=False)
+
+
+def clear_invitation(request):
+    con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
+    cur=con.cursor()
+    id=request.POST['mid']
+    sql="delete from Msglist where sendid="+str(id)
+    cur.execute(sql)
+    cur.connection.commit()
+    con.close()
+    return JsonResponse(1,safe=False)
+
+
+
+def delete_invitation(request):
+    con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
+    cur=con.cursor()
+    mid=request.POST['mid']
+    sql="delete from Msglist where mid="+str(mid)
+    cur.execute(sql)
     cur.connection.commit()
     con.close()
     return JsonResponse(1,safe=False)
@@ -360,10 +407,10 @@ def quit_group_func(id,groupnum,op):
     for row in cur:
         docnum = row[0]
         change_stat_func(docnum, -1)
+    #还需要再对文档的归属和权限作品进行处理
 
     if op==-1:send_notice(id, groupnum, op)
 
-    #还需要再对文档的归属和权限作品进行处理
     sql = "update Grouplist set groupsize=groupsize-1 where groupnum=" + str(groupnum)
     print(sql)
     cur.execute(sql)

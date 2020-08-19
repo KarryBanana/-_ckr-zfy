@@ -166,7 +166,7 @@ def search_docs(request):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     key=request.POST['key']
-    sql="select id,docname,author_id,lasttime from Table_file where stat>-2 and docname like '%"+key+"%'"
+    sql="select id,docname,author_id,lasttime from Table_file where (stat=0 or stat=1) and docname like '%"+key+"%'"
     # print(sql)
     cur.execute(sql)
     docs=cur.fetchall()

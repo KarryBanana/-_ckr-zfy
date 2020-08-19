@@ -75,7 +75,7 @@ def match_auth(request):
     cur.execute(sql)
     for row in cur:
         bool=row[0]
-    if bool>=1:rarr=[1,1,1]
+    if bool==1:rarr=[1,1,1]
     else:
         if docstat<=-1:rarr=[0,0,0]
         elif docstat==0:rarr=[1,1,0]
@@ -149,11 +149,8 @@ def change_owner(request):
     cur=con.cursor()
     id=request.POST['id']
     sql="update Table_file set groupnum=-1 where id="+str(id)
-    cur.execute(sql)
-    sql="delete from Authlist where docnum="+str(id)+" and (stat=2 or stat=3)"
-    cur.execute(sql)
-    cur.connection.commit()
     change_stat_func(id,-1)
+    cur.execute(sql)
     cur.connection.commit()
     con.close()
     return JsonResponse(1,safe=False)
@@ -166,7 +163,8 @@ def change_owner_b(request):
     groupnum=request.POST['groupnum']
     sql="update Table_file set groupnum="+str(groupnum)+" where id="+str(id)
     cur.execute(sql)
-    cur.connection.commit()
+    sql="delete from Table_file where id="+str(id)
+    cur.execute(sql)
     change_stat_func(id, 2)
     sql = "select id from Joinlist where groupnum=" + str(groupnum)
     cur.execute(sql)
@@ -184,12 +182,11 @@ def change_stat_func(docnum,stat):
     con=pymysql.connect(host="39.97.101.50", port=3306, user="root", password="rjgcxxq", database="xxqdb", charset="utf8")
     cur=con.cursor()
     sql="update Table_file set stat="+str(stat)+" where id="+str(docnum)
-    print(sql)
     cur.execute(sql)
-    print(4)
     cur.connection.commit()
     con.close()
-    return 1
+    if cur!=None:return 1
+    else:return 0
 
 
 def set_user_auth_func(id,docnum,stat):
